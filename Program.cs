@@ -5,8 +5,7 @@ using System.Linq;
 namespace backgammonProject
 {
     class Program
-    {
-        /* Fonksiyona verilecek parametrelerin setlenmesi */
+    /* Fonksiyona verilecek parametrelerin setlenmesi */
         static void Main(string[] args)
         {
             Dictionary<int, int> keyValues = new Dictionary<int, int>();
@@ -31,7 +30,6 @@ namespace backgammonProject
         private static void find_Moves(Dictionary<int, int> keyValues, int zar1, int zar2)
         {
             List<int> zarListesi = new List<int>() { zar1, zar2 };
-            //(((3,4),(5,7),6), ((3, 4), (5, 7), 6))
             List<Tuple<Tuple<int, int>, Tuple<int, int>, int>> puanListesi = new List<Tuple<Tuple<int, int>, Tuple<int, int>, int>>();
 
             /* Hamlelerin hesaplanması */
@@ -42,7 +40,7 @@ namespace backgammonProject
                     Dictionary<int, int> hesapListesi = NonReferenceCopy(keyValues);
                     if (hesapListesi[i] > 0)
                     {
-                        Tuple<int, int, int> ilktas = TasKonumHesapla(zar, hesapListesi, i);
+                        Tuple<int, int> ilktas = TasKonumHesapla(zar, hesapListesi, i);
 
                         List<int> tempZarList = zarListesi.Where(k => !k.Equals(zar)).ToList();
                         foreach (var tempZar in tempZarList)
@@ -52,19 +50,20 @@ namespace backgammonProject
                                 Dictionary<int, int> tempHesapListesi = NonReferenceCopy(hesapListesi);
                                 if (tempHesapListesi[j] > 0)
                                 {
-                                    Tuple<int, int, int> sontas = TasKonumHesapla(tempZar, tempHesapListesi, j);
+                                    Tuple<int, int> sontas = TasKonumHesapla(tempZar, tempHesapListesi, j);
 
                                     puanListesi.Add(Tuple.Create(
-                                        Tuple.Create(ilktas.Item1, ilktas.Item2),
-                                        Tuple.Create(sontas.Item1, sontas.Item2),
-                                        ilktas.Item3 + sontas.Item3));
+                                    Tuple.Create(ilktas.Item1 + 1, ilktas.Item2 + 1),
+                                    Tuple.Create(sontas.Item1 + 1, sontas.Item2 + 1),
+                                    hesapla(ilktas, sontas, tempHesapListesi)));
                                 }
                             }
                         }
                     }
                 }
             }
-            puanListesi.ForEach(Console.WriteLine);
+
+            puanListesi.ForEach(k => { if (k.Item3 > 0) Console.WriteLine(k); } );
             Console.ReadLine();
         }
 
@@ -79,43 +78,69 @@ namespace backgammonProject
             return copy;
         }
 
-        private static Tuple<int, int, int> TasKonumHesapla(int zar, Dictionary<int, int> hesapListesi, int key)
+        private static Tuple<int, int> TasKonumHesapla(int zar, Dictionary<int, int> hesapListesi, int key)
         {
             int konum = key;
             int ilkkonum = key;
             hesapListesi[konum] = hesapListesi[konum] - 1;
             konum = konum + zar >= 24 ? (konum + zar) - 24 : konum + zar;
             hesapListesi[konum] = hesapListesi[konum] + 1;
-            return Tuple.Create(ilkkonum, konum, hesapla(ilkkonum, konum, hesapListesi));
+            return Tuple.Create(ilkkonum, konum);
         }
 
-        /* Belirlenen hamlelerin puan hesabı yapılmamaktadır. */
-        private static int hesapla(int ilkkonum, int konum, Dictionary<int, int> hesapListesi)
+        /* Belirlenen hamlelerin puan hesabı yapılmaktadır. */
+        private static int hesapla(Tuple<int,int> ilktas, Tuple<int,int> sontas, Dictionary<int, int> hesapListesi)
         {
             int puan = 0;
-            int ilkKonumTasSayisi = hesapListesi[ilkkonum];
-            int SonKonumTasSayisi = hesapListesi[konum];
             List<int> onemlitaslarListesi = new List<int>() { 4, 5, 6, 7, 16, 17, 18, 19 };
 
-            if (ilkKonumTasSayisi == 1) //Bir kapı açmak -1 puan, eğer önemli kapı ise -2
+            switch (hesapListesi[sontas.Item1]) //son1KonumTasSayisi
             {
-                puan = puan - 1;
-                if (onemlitaslarListesi.Contains(ilkkonum))
-                    puan -= 1;
+                case 0:
+                    puan = puan + 1;
+                    break;
+                case 1:
+                    if (ilktas.Item2 != sontas.Item1)
+                        puan = puan + (onemlitaslarListesi.Contains(ilktas.Item2) ? -2 : -1) ;
+
+                    break;
+
             }
-            if (ilkKonumTasSayisi >= 2 && SonKonumTasSayisi == 1) //Bir taş açığa çıkarmak -1 puan
+            switch (hesapListesi[sontas.Item2]) //son2KonumTasSayisi
             {
-                puan--;
+                case 1:
+                        puan = puan - 1;
+                    break;
+                case 2:
+                    puan = puan + (onemlitaslarListesi.Contains(sontas.Item2) ? 2 : 1);//+ (hesapListesi[sontas.Item2] == 2 ? 1 : 0);
+
+                    if (ilktas.Item2 != sontas.Item2)
+                        puan=puan+1;
+
+                        break;
             }
-            if (ilkKonumTasSayisi == 0 && SonKonumTasSayisi > 1) //Bir taşı açıktan kurtarmak +1 puan
+
+            switch (hesapListesi[ilktas.Item2])
             {
-                puan++;
+                case 1:
+                    puan = puan - 1;
+                    break;
+                case 2:
+                    if (ilktas.Item2 != sontas.Item2)
+                        puan = puan + (onemlitaslarListesi.Contains(ilktas.Item2) ? 2 : 1); //+ (hesapListesi[ilktas.Item2] == 2 ? 1 : 0);
+                    break;
+
             }
-            if (SonKonumTasSayisi == 2) //Bir kapı kapatmak +1 puan, eğer önemli kapı ise ise +2
+            switch (hesapListesi[ilktas.Item1])
             {
-                puan = puan + 1;
-                if (onemlitaslarListesi.Contains(konum))
-                    puan += 1;
+                case 0:
+                    puan = puan + 1;
+                    break;
+                case 1:
+                    if (ilktas.Item1 != sontas.Item1)
+                        puan = puan + (onemlitaslarListesi.Contains(ilktas.Item2) ? -2 : -1) ;
+                    break;
+
             }
             return puan;
         }
