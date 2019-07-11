@@ -5,7 +5,8 @@ using System.Linq;
 namespace backgammonProject
 {
     class Program
-    {/* Fonksiyona verilecek parametrelerin setlenmesi */
+    {
+        /* Fonksiyona verilecek parametrelerin setlenmesi */
         static void Main(string[] args)
         {
             Dictionary<int, int> keyValues = new Dictionary<int, int>();
@@ -21,8 +22,8 @@ namespace backgammonProject
             keyValues[12] = 1;
 
             Random rnd = new Random();
-            int zar1 = rnd.Next(1, 6);
-            int zar2 = rnd.Next(1, 6);
+            int zar1 = 6; // rnd.Next(1, 6);
+            int zar2 = 1; // rnd.Next(1, 6);
 
             find_Moves(keyValues, zar1, zar2);
         }
@@ -85,25 +86,37 @@ namespace backgammonProject
             hesapListesi[konum] = hesapListesi[konum] - 1;
             konum = konum + zar >= 24 ? (konum + zar) - 24 : konum + zar;
             hesapListesi[konum] = hesapListesi[konum] + 1;
-            return Tuple.Create(ilkkonum, konum, 5/*hesapla(ilkkonum, konum, hesapListesi)*/);
+            return Tuple.Create(ilkkonum, konum, hesapla(ilkkonum, konum, hesapListesi));
         }
 
         /* Belirlenen hamlelerin puan hesabı yapılmamaktadır. */
         private static int hesapla(int ilkkonum, int konum, Dictionary<int, int> hesapListesi)
         {
             int puan = 0;
-            int ilkkonumdeger = hesapListesi[ilkkonum];
-            int sonkonumdeger = hesapListesi[konum];
-            List<int> onemlitaslarListesi = new List<int>() { 5, 6, 7, 8, 17, 18, 19, 20 };
+            int ilkKonumTasSayisi = hesapListesi[ilkkonum];
+            int SonKonumTasSayisi = hesapListesi[konum];
+            List<int> onemlitaslarListesi = new List<int>() { 4, 5, 6, 7, 16, 17, 18, 19 };
 
-            //if (onemlitaslarListesi.Contains(ilkkonum) && ilkkonumdeger > 2)
-            //{
-            //    puan = puan + 2;
-            //}
-            //if (onemlitaslarListesi.Contains(konum) && sonkonumdeger > 2)
-            //{
-            //    puan = puan + 2;
-            //}
+            if (ilkKonumTasSayisi == 1) //Bir kapı açmak -1 puan, eğer önemli kapı ise -2
+            {
+                puan = puan - 1;
+                if (onemlitaslarListesi.Contains(ilkkonum))
+                    puan -= 1;
+            }
+            if (ilkKonumTasSayisi >= 2 && SonKonumTasSayisi == 1) //Bir taş açığa çıkarmak -1 puan
+            {
+                puan--;
+            }
+            if (ilkKonumTasSayisi == 0 && SonKonumTasSayisi > 1) //Bir taşı açıktan kurtarmak +1 puan
+            {
+                puan++;
+            }
+            if (SonKonumTasSayisi == 2) //Bir kapı kapatmak +1 puan, eğer önemli kapı ise ise +2
+            {
+                puan = puan + 1;
+                if (onemlitaslarListesi.Contains(konum))
+                    puan += 1;
+            }
             return puan;
         }
     }
